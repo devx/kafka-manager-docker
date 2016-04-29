@@ -1,7 +1,7 @@
 FROM anapsix/alpine-java:jdk8
 
 ENV KMANAGER_CONF_FILE="conf/application.conf" \
-    KMANAGER_VERSION="1.3.0.8" 
+    KMANAGER_VERSION="master" 
 
 RUN adduser -h / -H -D kafka
 
@@ -12,7 +12,7 @@ RUN apk --no-cache add curl tar wget && \
     cd /opt/kafka-manager/ && \
     echo 'scalacOptions ++= Seq("-Xmax-classfile-name", "200")' >> build.sbt && \
     ./sbt clean dist && \
-    unzip -d /opt/ ./target/universal/kafka-manager-${KMANAGER_VERSION}.zip && \
+    unzip -d /opt/ ./target/universal/kafka-manager-*.zip && \
     cd /opt/ && \
     rm -rf /opt/kafka-manager && \
     mv /opt/kafka-manager-* /opt/kafka-manager && \
