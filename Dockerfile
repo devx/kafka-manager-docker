@@ -17,14 +17,12 @@ RUN apk --no-cache add curl tar wget && \
     rm -rf /opt/kafka-manager && \
     mv /opt/kafka-manager-* /opt/kafka-manager && \
     rm -rf /tmp/* /root/.sbt /root/.ivy2 && \
-    printf '#!/bin/sh\nexec /opt/kafka-manager/bin/kafka-manager -Dconfig.file=${KMANAGER_CONF_FILE} "${KMANAGER_ARGS}" "${@}"\n' > /opt/kafka-manager/km.sh && \
+    printf '#!/bin/bash -xe\n/opt/kafka-manager/bin/kafka-manager -Dconfig.file=${KMANAGER_CONF_FILE} "${KMANAGER_ARGS}" "${@}"\n' > /opt/kafka-manager/km.sh && \
     mkdir /opt/kafka-manager/jks && \
     chmod +x /opt/kafka-manager/km.sh && \
     chown -R  kafka:kafka /opt/kafka-manager
 
 WORKDIR /opt/kafka-manager
-
-RUN mkdir /opt/kafka-manager/jks
 
 VOLUME ["/opt/kafka-manager/jks"]
 
