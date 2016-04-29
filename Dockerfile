@@ -1,40 +1,28 @@
-FROM centos:7
+FROM anapsix/alpine-java:jdk8
 
-MAINTAINER Clement Laforet <sheepkiller@cultdeadsheep.org>
+ENV KMANAGER__CONF_FILE="conf/application.conf" \
+    KMANAGER_VERSION="1.3.0.8" \
+    KMANAGER_ARGS="1.3.0.8"
 
-RUN yum update -y && \
-    yum install -y git wget unzip which && \
-    yum clean all
+RUN adduser -h / -H -D kafka
 
-ENV JAVA_MAJOR=8 \
-    JAVA_UPDATE=92 \
-    JAVA_BUILD=14 
-
-RUN wget -nv --no-cookies --no-check-certificate \
-    --header "Cookie: oraclelicense=accept-securebackup-cookie" \
-    "http://download.oracle.com/otn-pub/java/jdk/${JAVA_MAJOR}u${JAVA_UPDATE}-b${JAVA_BUILD}/jdk-${JAVA_MAJOR}u${JAVA_UPDATE}-linux-x64.rpm" -O /tmp/jdk-${JAVA_MAJOR}u${JAVA_UPDATE}-linux-x64.rpm && \
-     yum localinstall -y /tmp/jdk-${JAVA_MAJOR}u${JAVA_UPDATE}-linux-x64.rpm && \
-     rm -f /tmp/jdk-${JAVA_MAJOR}u${JAVA_UPDATE}-linux-x64.rpm
-
-ENV JAVA_HOME=/usr/java/jdk1.8.0_${JAVA_UPDATE} \
-    ZK_HOSTS=localhost:2181 \
-    KM_VERSION=1.3.0.8 \
-    KM_REVISION=6e196ea7a332471bead747535f9676f0a2bad008 \
-    KM_CONFIGFILE="conf/application.conf"
-
-RUN mkdir -p /tmp && \
-    cd /tmp && \
-    git clone https://github.com/yahoo/kafka-manager && \
-    cd /tmp/kafka-manager && \
-    git checkout ${KM_REVISION} && \
+RUN apk --no-cache add curl tar wget && \
+    mkdir -p ${KAFKA_DIR}/log /opt && \
+    wget -q -O - https://github.com/yahoo/kafka-manager/archive/${KMANAGER_VERSION}.tar.gz | tar -xzf - -C /opt && \
+    mv /opt/kafka-manager-* /opt/kafka-manager && \
+    cd /opt/kafka-manager/ && \
     echo 'scalacOptions ++= Seq("-Xmax-classfile-name", "200")' >> build.sbt && \
     ./sbt clean dist && \
-    unzip  -d / ./target/universal/kafka-manager-${KM_VERSION}.zip && \
-    rm -fr /tmp/* /root/.sbt /root/.ivy2 && \
-    printf '#!/bin/sh\nexec ./bin/kafka-manager -Dconfig.file=${KM_CONFIGFILE} "${KM_ARGS}" "${@}"\n' > /kafka-manager-${KM_VERSION}/km.sh && \
-    chmod +x /kafka-manager-${KM_VERSION}/km.sh
+    unzip -d /opt/ ./target/universal/kafka-manager-${KMANAGER_VERSION}.zip && \
+    cd /opt/ && \
+    rm -rf /opt/kafka-manager && \
+    mv /opt/kafka-manager-* /opt/kafka-manager && \
+    rm -rf /tmp/* /root/.sbt /root/.ivy2 && \
+    printf '#!/bin/sh\nexec /opt/kafka-manager/bin/kafka-manager -Dconfig.file=${KM_CONFIGFILE} "${KM_ARGS}" "${@}"\n' > /opt/kafka-manager/km.sh && \
+    chmod +x /opt/kafka-manager/km.sh && \
+    chown -R  kafka:kafka /opt/kafka-manager
 
-WORKDIR /kafka-manager-${KM_VERSION}
+WORKDIR /opt/kafka-manager
 
 EXPOSE 9000
 ENTRYPOINT ["./km.sh"]
