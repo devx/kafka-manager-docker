@@ -24,5 +24,9 @@ RUN apk --no-cache add curl tar wget && \
 
 WORKDIR /opt/kafka-manager
 
+RUN mkdir /opt/kafka-manager/jks
+
+VOLUME ["/opt/kafka-manager/jks"]
+
 EXPOSE 9000
 ENTRYPOINT ["./km.sh"]
